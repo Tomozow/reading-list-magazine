@@ -1,4 +1,4 @@
-import { ReadingListEntry, EnhancedEntry } from '../models/ReadingListEntry';
+import { ReadingListEntry, EnhancedEntry, FilterOptions, SortOptions, DatabaseStats } from '../models/ReadingListEntry';
 import db from './database';
 import { mockReadingListEntries } from './mockData';
 
@@ -49,7 +49,7 @@ class ReadingListService {
   private async importMockData(): Promise<void> {
     try {
       // モックデータを使用してデータベースを初期化
-      await db.entries.bulkPut(mockReadingListEntries);
+      await db.bulkAddEntries(mockReadingListEntries);
       console.log('Imported mock data to database');
     } catch (error) {
       console.error('Failed to import mock data:', error);
@@ -90,7 +90,7 @@ class ReadingListService {
    */
   async getAllEntries(): Promise<EnhancedEntry[]> {
     try {
-      return await db.entries.toArray();
+      return await db.getAllEntries();
     } catch (error) {
       console.error('Failed to get entries from database:', error);
       return [];
@@ -102,10 +102,46 @@ class ReadingListService {
    */
   async getEntryById(id: string): Promise<EnhancedEntry | undefined> {
     try {
-      return await db.entries.get(id);
+      return await db.getEntryById(id);
     } catch (error) {
       console.error(`Failed to get entry (ID: ${id}):`, error);
       return undefined;
+    }
+  }
+  
+  /**
+   * フィルターとソートオプションに基づいてエントリを取得
+   */
+  async getFilteredEntries(
+    options: FilterOptions = {},
+    sort: SortOptions = { field: 'addTime', direction: 'desc' }
+  ): Promise<EnhancedEntry[]> {
+    try {
+      return await db.getFilteredEntries(options, sort);
+    } catch (error) {
+      console.error('Failed to get filtered entries:', error);
+      return [];
+    }
+  }
+  
+  /**
+   * データベースの統計情報を取得
+   */
+  async getDatabaseStats(): Promise<DatabaseStats> {
+    try {
+      return await db.getDatabaseStats();
+    } catch (error) {
+      console.error('Failed to get database stats:', error);
+      // エラー時のデフォルト値
+      return {
+        totalEntries: 0,
+        readEntries: 0,
+        unreadEntries: 0,
+        averageContentLength: 0,
+        oldestEntryDate: Date.now(),
+        newestEntryDate: Date.now(),
+        totalStorageUsed: 0
+      };
     }
   }
 
@@ -126,7 +162,7 @@ class ReadingListService {
       
       if (newEntries.length > 0) {
         // 新しいエントリをデータベースに追加
-        await db.entries.bulkAdd(newEntries);
+        await db.bulkAddEntries(newEntries);
         console.log(`Added ${newEntries.length} new entries to database`);
       }
       
@@ -137,10 +173,9 @@ class ReadingListService {
         if (dbEntry) {
           // タイトルまたはURLが変更されている場合は更新
           if (entry.title !== dbEntry.title || entry.url !== dbEntry.url) {
-            await db.entries.update(entry.id, {
+            await db.updateEntry(entry.id, {
               title: entry.title,
-              url: entry.url,
-              lastUpdateTime: Date.now()
+              url: entry.url
             });
           }
         }
@@ -152,7 +187,7 @@ class ReadingListService {
       
       if (deletedEntries.length > 0) {
         // 削除されたエントリをデータベースからも削除
-        await db.entries.bulkDelete(deletedEntries.map(entry => entry.id));
+        await db.bulkDeleteEntries(deletedEntries.map(entry => entry.id));
         console.log(`Removed ${deletedEntries.length} deleted entries from database`);
       }
     } catch (error) {
@@ -179,7 +214,7 @@ class ReadingListService {
       };
       
       // データベースに追加
-      await db.entries.add(entry);
+      await db.addEntry(entry);
       
       return id;
     } catch (error) {
@@ -194,10 +229,7 @@ class ReadingListService {
   async updateEntry(id: string, data: Partial<EnhancedEntry>): Promise<void> {
     try {
       // データベース内のエントリを更新
-      await db.entries.update(id, {
-        ...data,
-        lastUpdateTime: Date.now()
-      });
+      await db.updateEntry(id, data);
       
       // Chrome APIでも更新（タイトルとURLの変更のみサポート）
       if (data.title || data.url) {
@@ -216,12 +248,25 @@ class ReadingListService {
    */
   async updateReadStatus(id: string, isRead: boolean): Promise<void> {
     try {
-      await db.entries.update(id, { 
+      const now = Date.now();
+      await db.updateEntry(id, { 
         isRead,
-        lastUpdateTime: Date.now() 
+        lastUpdateTime: now,
+        lastReadTime: isRead ? now : undefined
       });
     } catch (error) {
       console.error('Failed to update read status:', error);
+    }
+  }
+  
+  /**
+   * エントリのタグを更新
+   */
+  async updateTags(id: string, tags: string[]): Promise<void> {
+    try {
+      await db.updateEntry(id, { tags });
+    } catch (error) {
+      console.error('Failed to update tags:', error);
     }
   }
 
@@ -234,7 +279,7 @@ class ReadingListService {
       await chrome.readingList.removeEntry(id);
       
       // データベースからも削除
-      await db.entries.delete(id);
+      await db.deleteEntry(id);
     } catch (error) {
       console.error('Failed to delete entry:', error);
     }
@@ -255,7 +300,7 @@ class ReadingListService {
       };
       
       // データベースに追加
-      await db.entries.put(newEntry);
+      await db.addEntry(newEntry);
       console.log('Reading List Entry added to database:', newEntry.title);
     } catch (error) {
       console.error('Failed to handle entry added event:', error);
@@ -268,7 +313,7 @@ class ReadingListService {
   async handleEntryDeleted(id: string): Promise<void> {
     try {
       // データベースから削除
-      await db.entries.delete(id);
+      await db.deleteEntry(id);
       console.log('Reading List Entry deleted from database. ID:', id);
     } catch (error) {
       console.error('Failed to handle entry deleted event:', error);
@@ -281,7 +326,7 @@ class ReadingListService {
   async handleEntryUpdated(entry: chrome.readingList.ReadingListEntry): Promise<void> {
     try {
       // データベース内のエントリを更新
-      await db.entries.update(entry.id, {
+      await db.updateEntry(entry.id, {
         title: entry.title,
         url: entry.url,
         lastUpdateTime: entry.lastUpdateTime || Date.now()
