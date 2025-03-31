@@ -3,17 +3,17 @@ module.exports = {
   testEnvironment: 'jsdom',
   roots: ['<rootDir>/src'],
   transform: {
-    '^.+\\.tsx?$': 'ts-jest',
+    '^.+\\.tsx?$': ['ts-jest', {
+      isolatedModules: true
+    }]
   },
   moduleNameMapper: {
     '^.+\\.css$': '<rootDir>/src/tests/mocks/styleMock.js'
   },
+  transformIgnorePatterns: [
+    '/node_modules/(?!(dexie|@mozilla)/)'
+  ],
   setupFiles: ['<rootDir>/src/tests/setup.js'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  testRegex: '(/__tests__/.*|(\\\\.|/)(test|spec))\\\\.(jsx?|tsx?)$',
-  globals: {
-    'ts-jest': {
-      isolatedModules: true
-    }
-  }
+  testMatch: ['**/*.test.ts', '**/*.test.tsx']
 };
