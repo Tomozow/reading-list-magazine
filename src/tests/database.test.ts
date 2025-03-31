@@ -2,7 +2,7 @@ import db from '../services/database';
 import { EnhancedEntry, FilterOptions, SortOptions } from '../models/ReadingListEntry';
 
 // テスト用のサンプルデータ
-const sampleEntries: EnhancedEntry[] = [
+const sampleEntries: Array<EnhancedEntry> = [
   {
     id: 'test-1',
     url: 'https://example.com/article1',
