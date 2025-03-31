@@ -16,6 +16,10 @@ export interface EnhancedEntry extends ReadingListEntry {
   siteName?: string;  // サイト名
   author?: string;    // 著者名
   publishDate?: string; // 公開日
+  domain?: string;    // ドメイン名（検索・フィルタリング用）
+  contentExtracted?: boolean; // コンテンツが抽出済みかどうか
+  lastReadTime?: number; // 最後に読んだ時間
+  tags?: string[];    // タグ（将来的な機能拡張用）
 }
 
 // フィルタリングのオプションインターフェース
@@ -24,10 +28,30 @@ export interface FilterOptions {
   dateRange?: [Date, Date] | null;
   domain?: string | null;
   searchTerm?: string | null;
+  tags?: string[] | null; // タグによるフィルタリング
 }
 
 // ソートのオプションインターフェース
 export interface SortOptions {
-  field: 'addTime' | 'title' | 'lastUpdateTime';
+  field: 'addTime' | 'title' | 'lastUpdateTime' | 'lastReadTime' | 'publishDate';
   direction: 'asc' | 'desc';
+}
+
+// コンテンツ抽出オプションインターフェース
+export interface ContentExtractionOptions {
+  includeImages?: boolean;
+  maxImageSize?: number;
+  includeLinks?: boolean;
+  sanitizeHtml?: boolean;
+}
+
+// データベース統計情報インターフェース
+export interface DatabaseStats {
+  totalEntries: number;
+  readEntries: number;
+  unreadEntries: number;
+  averageContentLength: number;
+  oldestEntryDate: number;
+  newestEntryDate: number;
+  totalStorageUsed: number; // バイト単位
 }
