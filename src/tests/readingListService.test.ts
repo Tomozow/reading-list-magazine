@@ -48,7 +48,7 @@ describe('ReadingListService', () => {
 
       // モックの設定
       chrome.readingList.query.mockResolvedValueOnce(apiEntries);
-      (db.getAllEntries as jest.Mock).mockResolvedValueOnce(dbEntries);
+      (db.getAllEntries as jest.MockedFunction<typeof db.getAllEntries>).mockResolvedValueOnce(dbEntries);
 
       await readingListService.syncReadingList();
 
@@ -73,7 +73,7 @@ describe('ReadingListService', () => {
         { id: 'entry-1', url: 'https://example.com/1', title: 'Example 1', addTime: Date.now(), isRead: false },
         { id: 'entry-2', url: 'https://example.com/2', title: 'Example 2', addTime: Date.now(), isRead: true }
       ];
-      (db.getAllEntries as jest.Mock).mockResolvedValueOnce(mockEntries);
+      (db.getAllEntries as jest.MockedFunction<typeof db.getAllEntries>).mockResolvedValueOnce(mockEntries);
 
       const entries = await readingListService.getAllEntries();
       expect(entries).toEqual(mockEntries);
@@ -82,7 +82,7 @@ describe('ReadingListService', () => {
 
     it('IDでエントリを取得できること', async () => {
       const mockEntry = { id: 'entry-1', url: 'https://example.com', title: 'Example', addTime: Date.now(), isRead: false };
-      (db.getEntryById as jest.Mock).mockResolvedValueOnce(mockEntry);
+      (db.getEntryById as jest.MockedFunction<typeof db.getEntryById>).mockResolvedValueOnce(mockEntry);
 
       const entry = await readingListService.getEntryById('entry-1');
       expect(entry).toEqual(mockEntry);
@@ -93,7 +93,7 @@ describe('ReadingListService', () => {
       const mockEntries = [
         { id: 'entry-1', url: 'https://example.com/1', title: 'Example 1', addTime: Date.now(), isRead: false }
       ];
-      (db.getFilteredEntries as jest.Mock).mockResolvedValueOnce(mockEntries);
+      (db.getFilteredEntries as jest.MockedFunction<typeof db.getFilteredEntries>).mockResolvedValueOnce(mockEntries);
 
       const options = { showRead: false };
       const sort = { field: 'addTime', direction: 'desc' };
@@ -110,7 +110,7 @@ describe('ReadingListService', () => {
       const entryId = 'new-id';
 
       chrome.readingList.addEntry.mockResolvedValueOnce(entryId);
-      (db.addEntry as jest.Mock).mockResolvedValueOnce(entryId);
+      (db.addEntry as jest.MockedFunction<typeof db.addEntry>).mockResolvedValueOnce(entryId);
 
       const result = await readingListService.addEntry(url, title);
       expect(result).toBe(entryId);
@@ -219,7 +219,7 @@ describe('ReadingListService', () => {
         totalStorageUsed: 1024 * 100
       };
       
-      (db.getDatabaseStats as jest.Mock).mockResolvedValueOnce(mockStats);
+      (db.getDatabaseStats as jest.MockedFunction<typeof db.getDatabaseStats>).mockResolvedValueOnce(mockStats);
       
       const stats = await readingListService.getDatabaseStats();
       expect(stats).toEqual(mockStats);
