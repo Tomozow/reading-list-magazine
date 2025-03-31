@@ -21,18 +21,30 @@ describe('ReadingListService', () => {
   beforeEach(() => {
     // モックのリセット
     jest.clearAllMocks();
+    
+    // 初期処理のためにデフォルトの返り値を設定
+    (db.getAllEntries as jest.MockedFunction<typeof db.getAllEntries>).mockResolvedValue([]);
+    (db.bulkAddEntries as jest.MockedFunction<typeof db.bulkAddEntries>).mockResolvedValue([]);
   });
 
   describe('初期化と同期', () => {
     it('サービスが正常に初期化されること', async () => {
       // Chrome APIが利用可能な場合のモック設定
-      chrome.readingList.query.mockResolvedValueOnce([
-        { id: 'chrome-1', url: 'https://example.com', title: 'Example', addTime: Date.now() }
-      ]);
+      const mockEntry = { id: 'chrome-1', url: 'https://example.com', title: 'Example', addTime: Date.now() };
+      chrome.readingList.query.mockResolvedValueOnce([mockEntry]);
 
       await readingListService.initialize();
       expect(chrome.readingList.query).toHaveBeenCalled();
-      expect(db.bulkAddEntries).toHaveBeenCalled();
+      
+      // bulkAddEntriesは新しいエントリがあるときのみ呼ばれるため、
+      // getAllEntriesの戻り値を空にして、新規追加が発生するようにする
+      expect(db.bulkAddEntries).toHaveBeenCalledWith([
+        expect.objectContaining({
+          id: mockEntry.id,
+          url: mockEntry.url,
+          title: mockEntry.title
+        })
+      ]);
     });
 
     it('リーディングリストとデータベースが同期されること', async () => {
