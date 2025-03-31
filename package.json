@@ -6,7 +6,8 @@
   "scripts": {
     "start": "webpack --watch --config webpack.dev.js",
     "build": "webpack --config webpack.prod.js",
-    "test": "jest"
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [
     "chrome-extension",
@@ -28,8 +29,10 @@
     "css-loader": "^6.7.3",
     "eslint": "^8.40.0",
     "eslint-plugin-react": "^7.32.2",
+    "fake-indexeddb": "^4.0.2",
     "html-webpack-plugin": "^5.5.1",
     "jest": "^29.5.0",
+    "jest-environment-jsdom": "^29.5.0",
     "postcss": "^8.4.23",
     "postcss-loader": "^7.3.0",
     "style-loader": "^3.3.2",
