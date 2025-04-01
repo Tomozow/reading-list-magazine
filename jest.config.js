@@ -3,15 +3,15 @@ module.exports = {
   testEnvironment: 'jsdom',
   roots: ['<rootDir>/src'],
   transform: {
-    '^.+\.tsx?$': ['ts-jest', { isolatedModules: true }]
+    '^.+\\.tsx?$': ['ts-jest', { isolatedModules: true }],
   },
-  transformIgnorePatterns: [
-    '/node_modules/(?!(dexie|fake-indexeddb)/)'
-  ],
   moduleNameMapper: {
-    '^.+\.css$': '<rootDir>/src/tests/mocks/styleMock.js'
+    '^.+\\.css$': '<rootDir>/src/tests/mocks/styleMock.js'
   },
   setupFiles: ['<rootDir>/src/tests/setup.js'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  testRegex: '(/__tests__/.*|(\.|/)(test|spec))\.(jsx?|tsx?)$',
+  testMatch: ['**/*.test.ts', '**/*.test.tsx'],
+  transformIgnorePatterns: [
+    '/node_modules/(?!(dexie)/)'
+  ]
 };
