@@ -26,11 +26,17 @@ describe('ReadingListService', () => {
   describe('初期化と同期', () => {
     it('サービスが正常に初期化されること', async () => {
       // Chrome APIが利用可能な場合のモック設定
-      chrome.readingList.query.mockResolvedValueOnce([
+      const mockEntries = [
         { id: 'chrome-1', url: 'https://example.com', title: 'Example', addTime: Date.now() }
-      ]);
+      ];
+      chrome.readingList.query.mockResolvedValueOnce(mockEntries);
+      
+      // データベース操作のモック
+      (db.getAllEntries as jest.MockedFunction<typeof db.getAllEntries>).mockResolvedValueOnce([]);
+      (db.bulkAddEntries as jest.MockedFunction<typeof db.bulkAddEntries>).mockResolvedValueOnce();
 
       await readingListService.initialize();
+      
       expect(chrome.readingList.query).toHaveBeenCalled();
       expect(db.bulkAddEntries).toHaveBeenCalled();
     });
@@ -49,6 +55,9 @@ describe('ReadingListService', () => {
       // モックの設定
       chrome.readingList.query.mockResolvedValueOnce(apiEntries);
       (db.getAllEntries as jest.MockedFunction<typeof db.getAllEntries>).mockResolvedValueOnce(dbEntries);
+      (db.bulkAddEntries as jest.MockedFunction<typeof db.bulkAddEntries>).mockResolvedValueOnce();
+      (db.updateEntry as jest.MockedFunction<typeof db.updateEntry>).mockResolvedValueOnce();
+      (db.bulkDeleteEntries as jest.MockedFunction<typeof db.bulkDeleteEntries>).mockResolvedValueOnce();
 
       await readingListService.syncReadingList();
 
@@ -129,6 +138,8 @@ describe('ReadingListService', () => {
       const id = 'entry-1';
       const changes = { title: '更新されたタイトル', url: 'https://example.com/updated' };
 
+      (db.updateEntry as jest.MockedFunction<typeof db.updateEntry>).mockResolvedValueOnce();
+      
       await readingListService.updateEntry(id, changes);
       expect(db.updateEntry).toHaveBeenCalledWith(id, changes);
       expect(chrome.readingList.updateEntry).toHaveBeenCalledWith(id, changes);
@@ -138,6 +149,8 @@ describe('ReadingListService', () => {
       const id = 'entry-1';
       const isRead = true;
 
+      (db.updateEntry as jest.MockedFunction<typeof db.updateEntry>).mockResolvedValueOnce();
+      
       await readingListService.updateReadStatus(id, isRead);
       expect(db.updateEntry).toHaveBeenCalledWith(id, expect.objectContaining({
         isRead,
@@ -149,6 +162,8 @@ describe('ReadingListService', () => {
     it('エントリを削除できること', async () => {
       const id = 'entry-1';
 
+      (db.deleteEntry as jest.MockedFunction<typeof db.deleteEntry>).mockResolvedValueOnce();
+      
       await readingListService.deleteEntry(id);
       expect(chrome.readingList.removeEntry).toHaveBeenCalledWith(id);
       expect(db.deleteEntry).toHaveBeenCalledWith(id);
@@ -165,6 +180,8 @@ describe('ReadingListService', () => {
         lastUpdateTime: Date.now()
       };
 
+      (db.addEntry as jest.MockedFunction<typeof db.addEntry>).mockResolvedValueOnce('event-1');
+      
       await readingListService.handleEntryAdded(entry);
       expect(db.addEntry).toHaveBeenCalledWith(expect.objectContaining({
         id: entry.id,
@@ -176,6 +193,8 @@ describe('ReadingListService', () => {
     it('エントリ削除イベントを処理できること', async () => {
       const id = 'event-1';
 
+      (db.deleteEntry as jest.MockedFunction<typeof db.deleteEntry>).mockResolvedValueOnce();
+      
       await readingListService.handleEntryDeleted(id);
       expect(db.deleteEntry).toHaveBeenCalledWith(id);
     });
@@ -189,6 +208,8 @@ describe('ReadingListService', () => {
         lastUpdateTime: Date.now()
       };
 
+      (db.updateEntry as jest.MockedFunction<typeof db.updateEntry>).mockResolvedValueOnce();
+      
       await readingListService.handleEntryUpdated(entry);
       expect(db.updateEntry).toHaveBeenCalledWith(entry.id, expect.objectContaining({
         title: entry.title,
@@ -202,6 +223,8 @@ describe('ReadingListService', () => {
       const id = 'entry-1';
       const tags = ['tech', 'tutorial', 'javascript'];
 
+      (db.updateEntry as jest.MockedFunction<typeof db.updateEntry>).mockResolvedValueOnce();
+      
       await readingListService.updateTags(id, tags);
       expect(db.updateEntry).toHaveBeenCalledWith(id, { tags });
     });
